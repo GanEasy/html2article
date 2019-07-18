@@ -130,6 +130,44 @@ func (ec *extractor) ToArticle() (article *Article, err error) {
 	return
 }
 
+func (ec *extractor) HTMLToArticle() (article *Article, err error) {
+	body := find(ec.doc, isTag(atom.Body))
+	if body == nil {
+		body = ec.doc
+	}
+
+	titleNode := find(ec.doc, isTag(atom.Title))
+	if titleNode != nil {
+		ec.title = getText(titleNode)
+		ec.titleDistanceMin = countChar(ec.title)
+		ec.titleMatchLen = ec.titleDistanceMin
+	}
+
+	node := body
+	if node == nil {
+		err = ERROR_NOTFOUND
+		return
+	}
+	article = &Article{}
+	article.Publishtime = getPublishTime(node)
+
+	// Get the Content
+	article.contentNode = node
+	article.Content = getText(node)
+	article.Html, err = getHtml(node)
+	if err != nil {
+		return
+	}
+	article.Images = getImages(node)
+	//find title
+	article.Title = ec.title
+	if ec.option.AccurateTitle && ec.accurateTitle != "" {
+		article.Title = ec.accurateTitle
+	}
+	article.Images = getImages(node)
+	return
+}
+
 func (ec *extractor) tailNode(node *html.Node) {
 	var densities []float64
 	num := 0
